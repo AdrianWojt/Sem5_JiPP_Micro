@@ -1,5 +1,4 @@
-# Sem5_JiPP_Micro 🎮
-
+# Sem5_JiPP_Micro 
 Projekt rozproszonej gry zręcznościowej opartej na platformie Micro:bit z centralnym systemem zapisu i prezentacji wyników.
 
 ## Architektura sprzętowa i przepływ danych
