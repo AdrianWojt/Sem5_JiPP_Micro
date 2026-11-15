@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Micro:bit - Catch the Dot</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; }
+        .card { background: #1e293b; padding: 30px; border-radius: 12px; display: inline-block; max-width: 400px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        input, button { padding: 12px; font-size: 16px; margin: 10px 0; width: 100%; border-radius: 6px; border: none; box-sizing: border-box; }
+        input { background: #334155; color: white; }
+        button { background: #22c55e; color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background: #16a34a; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: left; }
+        th, td { padding: 10px; border-bottom: 1px solid #334155; }
+        th { color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Catch the Dot 🎮</h1>
+        <p>Wpisz swój nick i wyślij wynik:</p>
+        
+        <input type="text" id="nickname" placeholder="Twój Nick" value="Gracz1">
+        <input type="number" id="scoreInput" placeholder="Wynik (np. 15)" value="10">
+        <button onclick="sendScore()">Wyślij wynik do bazy</button>
+
+        <h3>Tabela Wyników (Top 5)</h3>
+        <table>
+            <thead>
+                <tr><th>Gracz</th><th>Wynik</th></tr>
+            </thead>
+            <tbody id="scoresList">
+                <tr><td colspan="2">Ładowanie wyników...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Endpoint Twojej funkcji w Supabase
+        const API_URL = "https://vpslwxqbfemuuroyxyif.supabase.co/functions/v1/score";
+        const SUPABASE_ANON_KEY = "sb_publishable_NWewEiCKNRdowSdOivwRvw_ywCkO1wl"; 
+
+        async function sendScore() {
+            const id = document.getElementById('nickname').value;
+            const wynik = parseInt(document.getElementById('scoreInput').value);
+
+            if (!id || isNaN(wynik)) {
+                alert("Wypełnij poprawne dane!");
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, wynik })
+                });
+
+                if (response.ok) {
+                    alert("Wynik został zapisany!");
+                    loadScores();
+                } else {
+                    alert("Błąd podczas zapisu wyniku.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Błąd sieci.");
+            }
+        }
+
+        async function loadScores() {
+            try {
+                // Pobieranie wyników bezpośrednio z tabeli game_scores w Supabase
+                const res = await fetch(`https://vpslwxqbfemuuroyxyif.supabase.co/rest/v1/game_scores?select=*&order=score.desc&limit=5`, {
+                    headers: {
+                        'apikey': "sb_publishable_NWewEiCKNRdowSdOivwRvw_ywCkO1wl",
+                        'Authorization': `Bearer sb_publishable_NWewEiCKNRdowSdOivwRvw_ywCkO1wl`
+                    }
+                });
+                const data = await res.json();
+                
+                const list = document.getElementById('scoresList');
+                list.innerHTML = "";
+                
+                if(data.length === 0) {
+                    list.innerHTML = `<tr><td colspan="2">Brak wyników w bazie.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(row => {
+                    list.innerHTML += `<tr><td>${row.client_id}</td><td><b>${row.score}</b></td></tr>`;
+                });
+            } catch (err) {
+                console.error("Nie udało się pobrać wyników", err);
+            }
+        }
+
+        // Automatyczne załadowanie wyników po wejściu na stronę
+        loadScores();
+    </script>
+</body>
+</html>
